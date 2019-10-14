@@ -19,9 +19,9 @@ int main(void) {
 	S_D_Queue.Speed_Q = Speed_Queue	;
 	S_D_Queue.Direction_Q =	Direction_Queue;
 	
-	xTaskCreate(Speed_Button_Task, "BUTTON1",configMINIMAL_STACK_SIZE, (QueueHandle_t)Speed_Queue,2, &BTN1);
-	xTaskCreate(Direction_Button_Task, "BUTTON2",configMINIMAL_STACK_SIZE, (QueueHandle_t)Direction_Queue,2, &BTN2);
-	xTaskCreate(Stepper_Motor_Task, "MOTOR",configMINIMAL_STACK_SIZE, (SD_Queue_Struct*)&S_D_Queue,1, &Motor);
+	xTaskCreate(Speed_Button_Task, "BUTTON1",configMINIMAL_STACK_SIZE,Speed_Queue,2, &BTN1);
+	xTaskCreate(Direction_Button_Task, "BUTTON2",configMINIMAL_STACK_SIZE,Direction_Queue,2, &BTN2);
+	xTaskCreate(Stepper_Motor_Task, "MOTOR",configMINIMAL_STACK_SIZE,&S_D_Queue,1, &Motor);
 	vTaskStartScheduler();
 	
 	while(1) 
