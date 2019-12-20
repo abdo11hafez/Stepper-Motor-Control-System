@@ -4,24 +4,23 @@
 #include "GPIO.h"
 #include "Application_Tasks.h"
 
-
+Parameters_Queue_Struct Speed_Direction_Step_Queue;
+TaskHandle_t  Motor,BTN1,BTN2;
+QueueHandle_t Speed_Queue ,Direction_Queue,Step_Queue ;
 
 int main(void) {
 	GPIO_Init();
+	Interrupt_Init();
 	
-	TaskHandle_t  Motor,BTN1,BTN2;
-	QueueHandle_t Speed_Queue ,Direction_Queue ;
-	SD_Queue_Struct S_D_Queue;
+	Speed_Queue = xQueueCreate(1,1);
+	Direction_Queue = xQueueCreate(1,1);
+	Step_Queue =  xQueueCreate(1,1);
 	
-	Speed_Queue = xQueueCreate(1,sizeof(uint8_t));
-	Direction_Queue = xQueueCreate(1,sizeof(uint8_t));
+	Speed_Direction_Step_Queue.Speed_Q = Speed_Queue	;
+	Speed_Direction_Step_Queue.Direction_Q =	Direction_Queue;
+	Speed_Direction_Step_Queue.Step_Q = Step_Queue;
 	
-	S_D_Queue.Speed_Q = Speed_Queue	;
-	S_D_Queue.Direction_Q =	Direction_Queue;
-	
-	xTaskCreate(Speed_Button_Task, "BUTTON1",configMINIMAL_STACK_SIZE,Speed_Queue,2, &BTN1);
-	xTaskCreate(Direction_Button_Task, "BUTTON2",configMINIMAL_STACK_SIZE,Direction_Queue,2, &BTN2);
-	xTaskCreate(Stepper_Motor_Task, "MOTOR",configMINIMAL_STACK_SIZE,&S_D_Queue,1, &Motor);
+	xTaskCreate(Stepper_Motor_Task, "MOTOR",configMINIMAL_STACK_SIZE, &Speed_Direction_Step_Queue,1, &Motor);
 	vTaskStartScheduler();
 	
 	while(1) 
@@ -32,9 +31,32 @@ int main(void) {
 }
 
 
+ISR(INT0_vect)
+{
+	// Updating Speed ISR
+	static uint8_t prev_speed = 0x01;
+	BaseType_t pxHigherPriorityTaskWoken ;
+	prev_speed += 2 ;
+	prev_speed = (prev_speed > 6) ? 1 :prev_speed;
+	xQueueOverwriteFromISR((QueueHandle_t)Speed_Queue,&prev_speed,&pxHigherPriorityTaskWoken)	;
+}
 
+ISR(INT1_vect)
+{
+	// Updating Direction ISR
+	BaseType_t pxHigherPriorityTaskWoken ;
+	static uint8_t prev_direction = 0x00;
+	prev_direction ^= 0x01 ;
+	xQueueOverwriteFromISR((QueueHandle_t)Direction_Queue,&prev_direction,&pxHigherPriorityTaskWoken)	;
+}
 
-
-
+ISR(INT2_vect)
+{
+	// Updating Step Mode ISR
+	BaseType_t pxHigherPriorityTaskWoken ;
+	static uint8_t prev_step_mode = 0x00;
+	prev_step_mode ^= 0x01 ;
+	xQueueOverwriteFromISR((QueueHandle_t)Step_Queue,&prev_step_mode,&pxHigherPriorityTaskWoken)	;
+}
 
 
