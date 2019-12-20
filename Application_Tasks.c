@@ -7,97 +7,162 @@
 
 #include "Application_Tasks.h"
 
-void Speed_Button_Task(void * Speed_Queue)
+void Interrupt_Init(void)
 {
-	uint8_t last_status = 0x00 ;
-	uint8_t data;
-	static uint8_t prev_speed = 0x01;
-	while(1)
-	{
-		GPIO_Read(1,&data) ;
-		if((data == 1) && (last_status == 0x00))
-		{
-			prev_speed += 2 ;
-			prev_speed = (prev_speed > 6) ? 1 :prev_speed;
-			xQueueOverwrite((QueueHandle_t)Speed_Queue,&prev_speed)	;
-		}
-		last_status = data;
-		vTaskDelay(55);
-	}
+	MCUCR &=~ 0x0f;
+	GICR |= 7<<5;
 }
 
-void Direction_Button_Task(void * Direction_Queue)
-{
-	uint8_t last_status = 0x00 ;
-	uint8_t data;
-	static uint8_t prev_direction = 0x00;
-	while(1)
-	{
-		GPIO_Read(2,&data) ;
-		if((data == 0x02) && (last_status == 0x00))
-		{
-			prev_direction ^= 0x01 ;
-			xQueueOverwrite((QueueHandle_t)Direction_Queue,&prev_direction)	;
-		}
-		last_status = data;
-		vTaskDelay(55);
-	}
-}
 
-void Stepper_Motor_Task(void* S_D_Queue)
+void Stepper_Motor_Task(void * Speed_Direction_Step_Queue)
 {
-	static int motor_angle = 0;
+	static int Fullstep_Position = 0;
+	static int HalfStep_Position = 0;
 	uint8_t	direction =0x00;
 	uint8_t speed = 0x01;
+	uint8_t StepMode =0x00;
 	TickType_t xLastWakeTime = xTaskGetTickCount();
 	while(1)
 	{
-		xQueuePeek( ((SD_Queue_Struct*)S_D_Queue)->Direction_Q, &direction, 0 );
-		xQueuePeek( ((SD_Queue_Struct*)S_D_Queue)->Speed_Q, &speed, 0 );
-		if(direction == 0x00)
+		xQueuePeek( ((Parameters_Queue_Struct*)Speed_Direction_Step_Queue)->Direction_Q, &direction, 0 );
+		xQueuePeek( ((Parameters_Queue_Struct*)Speed_Direction_Step_Queue)->Speed_Q, &speed, 0 );
+		xQueuePeek( ((Parameters_Queue_Struct*)Speed_Direction_Step_Queue)->Step_Q, &StepMode, 0 );
+		if(StepMode==0)
 		{
-			if (motor_angle==0)
+			if(direction == 0x00)
 			{
-				GPIO_Write(0,1<<0);
-				motor_angle++;
+				if (Fullstep_Position==0)
+				{
+					GPIO_Write(0,1<<0);
+					Fullstep_Position++;
+				}
+				else if (Fullstep_Position==1)
+				{
+					GPIO_Write(0,1<<1);
+					Fullstep_Position++;
+				}
+				else if (Fullstep_Position==2)
+				{
+					GPIO_Write(0,1<<2);
+					Fullstep_Position++;
+				}
+				else if (Fullstep_Position==3)
+				{
+					GPIO_Write(0,1<<3);
+					Fullstep_Position =0;
+				}
 			}
-			else if (motor_angle==1)
+			else if(direction == 0x01)
 			{
-				GPIO_Write(0,1<<1);
-				motor_angle++;
-			}
-			else if (motor_angle==2)
-			{
-				GPIO_Write(0,1<<2);
-				motor_angle++;
-			}
-			else if (motor_angle==3)
-			{
-				GPIO_Write(0,1<<3);
-				motor_angle =0;
+				if (Fullstep_Position==0)
+				{
+					GPIO_Write(0,1<<3);
+					Fullstep_Position++;
+				}
+				else if (Fullstep_Position==1)
+				{
+					GPIO_Write(0,1<<2);
+					Fullstep_Position++;
+				}
+				else if (Fullstep_Position==2)
+				{
+					GPIO_Write(0,1<<1);
+					Fullstep_Position++;
+				}
+				else if (Fullstep_Position==3)
+				{
+					GPIO_Write(0,1<<0);
+					Fullstep_Position =0;
+				}
 			}
 		}
-		else if(direction == 0x01)
+		else if (StepMode==1)
 		{
-			if (motor_angle==0)
+			if(direction == 0x00)
 			{
-				GPIO_Write(0,1<<3);
-				motor_angle++;
+				if (HalfStep_Position==0)
+				{
+					GPIO_Write(0,3<<0);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==1)
+				{
+					GPIO_Write(0,1<<1);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==2)
+				{
+					GPIO_Write(0,3<<1);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==3)
+				{
+					GPIO_Write(0,1<<2);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==4)
+				{
+					GPIO_Write(0,3<<2);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==5)
+				{
+					GPIO_Write(0,1<<3);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==6)
+				{
+					GPIO_Write(0,9);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==7)
+				{
+					GPIO_Write(0,1<<0);
+					HalfStep_Position =0;
+				}
 			}
-			else if (motor_angle==1)
+			else if(direction==1)
 			{
-				GPIO_Write(0,1<<2);
-				motor_angle++;
-			}
-			else if (motor_angle==2)
-			{
-				GPIO_Write(0,1<<1);
-				motor_angle++;
-			}
-			else if (motor_angle==3)
-			{
-				GPIO_Write(0,1<<0);
-				motor_angle =0;
+				if (HalfStep_Position==0)
+				{
+					GPIO_Write(0,1<<0);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==1)
+				{
+					GPIO_Write(0,9);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==2)
+				{
+					GPIO_Write(0,1<<3);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==3)
+				{
+					GPIO_Write(0,3<<2);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==4)
+				{
+					GPIO_Write(0,1<<2);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==5)
+				{
+					GPIO_Write(0,3<<1);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==6)
+				{
+					GPIO_Write(0,1<<1);
+					HalfStep_Position++;
+				}
+				else if (HalfStep_Position==7)
+				{
+					GPIO_Write(0,3<<0);
+					HalfStep_Position =0;
+				}				
 			}
 		}
 		vTaskDelayUntil( &xLastWakeTime, speed*150);
