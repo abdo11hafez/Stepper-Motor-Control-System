@@ -1,5 +1,5 @@
 /*
- * GPIO.c
+ * GPIOCFG.H
  *
  *	Updated on : 10/14/2019 3:00:34 PM
  *  Author	   : Abdelrahman Hafez
@@ -11,7 +11,7 @@
 
 
 /* A configuration to the number of GPIO groups*/
-#define GPIO_GROUPS_NUMBER 3u
+#define GPIO_GROUPS_NUMBER 4u
 
 
 #endif /* GPIO_CFG_H_ */
