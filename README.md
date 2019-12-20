@@ -3,4 +3,4 @@ Controlling Stepper Motor (Speed &amp; Direction) Using AVR ATmega32 and freeRTO
 - Software Developed on ATMEL studio 7  
 - Simulated on Proteus 8.6 .  
 - Motor has 3 Different Speeds and Changeable Direction.  
-- Only Full-step Mode.    
+- Full-step & Half Step Operation Modes Available.    
