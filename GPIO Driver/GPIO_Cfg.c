@@ -1,7 +1,7 @@
 /*
- * GPIO.c
+ * GPIO_Cfg.c
  *
- *	Updated on : 10/14/2019 3:00:34 PM
+ *  Updated on : 10/14/2019 3:00:34 PM
  *  Author	   : Abdelrahman Hafez
  */ 
 #include "GPIO.h"
@@ -17,14 +17,20 @@ const GPIO_CfgType GPIO_ConfigParam [GPIO_GROUPS_NUMBER] =
 	},
 	{
 		3,						/*PORTD*/
-		1<<0,					/*MASK-PIND0*/
+		1<<2,					/*MASK-PIND2*/
 		0x00,					/*INPUT*/
-		0x00					/*NO PULLUP*/
+		0xff					/* PULLUP*/
 	},
 	{
 		3,						/*PORTD*/
-		1<<1,					/*MASK-PIND1*/
+		1<<3,					/*MASK-PIND3*/
 		0x00,					/*INPUT*/
-		0x00					/*NO PULLUP*/
+		0xff					/* PULLUP*/
+	},
+	{
+		1,						/*PORTB*/
+		1<<2,					/*MASK-PINB2*/
+		0x00,					/*INPUT*/
+		0xff					/* PULLUP*/
 	}
 };
